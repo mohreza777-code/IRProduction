@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>IR Production | Wedding Organizer Suite</title>
+    <!-- SheetJS -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #e7ddd0; font-family: 'Segoe UI', Roboto, sans-serif; padding: 24px 20px; color: #2c241a; }
+        .app-container { max-width: 1600px; margin: 0 auto; background: #fef7f0; border-radius: 32px; box-shadow: 0 20px 40px -12px rgba(0,0,0,0.15); overflow: hidden; }
+        
+        /* Tabs */
+        .tabs-header { display: flex; flex-wrap: wrap; background: #f4e9df; border-bottom: 2px solid #d4a373; padding-left: 32px; gap: 8px; }
+        .tab-button { background: transparent; border: none; padding: 14px 28px; font-size: 1rem; font-weight: 600; font-family: 'Georgia', serif; color: #7a4b2a; cursor: pointer; border-radius: 20px 20px 0 0; transition: 0.2s; display: inline-flex; gap: 8px; align-items: center; }
+        .tab-button.active { background: #fffaf5; color: #9b623c; border-bottom: 3px solid #d4a373; }
+        .tab-button:hover:not(.active) { background: #eedbcb; }
+        .tab-content { display: none; background: #fffaf5; }
+        .tab-content.active { display: block; }
+        
+        .dashboard { display: flex; flex-wrap: wrap; }
+        .input-panel { 
+            flex: 1.1; 
+            min-width: 300px; 
+            background: #fffaf5; 
+            border-right: 1px solid #f0e2d4; 
+            padding: 28px 24px; 
+            overflow-y: auto; 
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .input-panel .section-title { width: 100%; text-align: left; }
+        .input-panel .input-group { width: 100%; max-width: 380px; margin-left: auto; margin-right: auto; }
+        .tombol-group { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 20px auto 15px; max-width: 500px; }
+        .btn-add-row { 
+            background: #7a4b2a; 
+            border: none; 
+            color: white; 
+            padding: 6px 14px; 
+            border-radius: 30px; 
+            font-weight: bold; 
+            font-size: 0.7rem; 
+            cursor: pointer; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 5px; 
+            transition: 0.2s;
+            margin: 5px auto;
+            width: auto;
+        }
+        .btn-add-row:hover { background: #9b623c; transform: translateY(-1px); }
+        
+        .preview-panel { flex: 2.3; background: #ffffff; padding: 28px 30px; overflow-x: auto; }
+        
+        .section-title { font-family: 'Georgia', serif; font-size: 1.3rem; font-weight: 600; color: #7a4b2a; border-left: 5px solid #d4a373; padding-left: 15px; margin: 0 0 1.2rem 0; }
+        .sub-section { background: #fef9f2; border-radius: 20px; padding: 16px 20px; margin-bottom: 24px; border: 1px solid #f0e2d4; }
+        .sub-section h4 { 
+            color: #9b623c; 
+            font-size: 1.1rem; 
+            margin-bottom: 20px;
+            border-left: 3px solid #d4a373; 
+            padding-left: 12px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
+        .form-grid-horizontal { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px 24px; }
+        .input-group { display: flex; flex-direction: column; }
+        .input-group label { font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: #8b5a3b; margin-bottom: 4px; }
+        .input-group input, .input-group select { padding: 8px 12px; border: 1px solid #e2cfbb; border-radius: 20px; font-size: 0.85rem; background: white; }
+        .input-group input:focus, .input-group select:focus { border-color: #d4a373; outline: none; }
+        .input-group input[readonly] { background-color: #f5efe8; cursor: default; border-color: #e2cfbb; }
+        
+        button { background: #7a4b2a; border: none; color: white; padding: 8px 16px; border-radius: 40px; font-weight: bold; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; }
+        button:hover { background: #9b623c; transform: translateY(-1px); }
+        button.secondary { background: #d4a373; color: #2c241a; }
+        button.btn-reset { background: #5d7a5c; }
+        button.excel-btn { background: #1f7b4d; }
+        button.save-btn { background: #2c6e9e; }
+        button.pdf-btn { background: #b95f2e; }
+        
+        /* Tabel Rundown */
+        .rundown-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            font-size: 0.8rem; 
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .rundown-table th { 
+            background: #7a4b2a; 
+            color: white; 
+            padding: 12px 8px; 
+            border: 1px solid #8b5a3b; 
+            text-align: center; 
+            font-weight: 600; 
+            font-size: 0.85rem;
+        }
+        .rundown-table td { 
+            border: 1px solid #e2cfbb; 
+            padding: 10px 8px; 
+            background-color: #fffdf9; 
+            vertical-align: middle; 
+            text-align: left;
+        }
+        .rundown-table td:first-child { text-align: center; }
+        .rundown-table td:nth-child(2) { text-align: center; }
+        .rundown-table td:nth-child(5) { text-align: center; }
+        .rundown-table td:nth-child(6) { text-align: center; }
+        
+        /* Lebar kolom */
+        .rundown-table th:nth-child(1) { width: 5%; text-align: center; }
+        .rundown-table th:nth-child(2) { width: 13%; text-align: center; }
+        .rundown-table th:nth-child(3) { width: 42%; text-align: center; }
+        .rundown-table th:nth-child(4) { width: 22%; text-align: center; }
+        .rundown-table th:nth-child(5) { width: 8%; text-align: center; }
+        .rundown-table th:nth-child(6) { width: 10%; text-align: center; }
+        
+        .rundown-table td .cell-display { 
+            display: block; 
+            word-break: break-word; 
+            white-space: normal;
+            line-height: 1.4; 
+            min-height: 40px; 
+            padding: 2px 0;
+            text-align: left;
+        }
+        
+        .editable-cell { cursor: text; position: relative; }
+        .editable-cell.editing { padding: 0; }
+        .editable-cell.editing .cell-display { display: none; }
+        .editable-cell textarea.acara-textarea { 
+            width: 100%; 
+            margin: 0; 
+            padding: 8px; 
+            border: 2px solid #d4a373; 
+            border-radius: 8px; 
+            font-family: inherit; 
+            font-size: 0.8rem; 
+            background: white; 
+            outline: none;
+            resize: vertical; 
+            min-height: 60px; 
+        }
+        .editable-cell input.pic-input {
+            width: 100%; 
+            margin: 0; 
+            padding: 8px; 
+            border: 2px solid #d4a373; 
+            border-radius: 8px;
+            font-family: inherit; 
+            font-size: 0.8rem; 
+            background: white; 
+            outline: none;
+        }
+        .durasi-input { 
+            width: 60px; 
+            padding: 6px 4px; 
+            border-radius: 20px; 
+            border: 1px solid #e2cfbb; 
+            text-align: center; 
+            font-size: 0.8rem; 
+        }
+        .action-buttons { 
+            display: flex; 
+            gap: 5px; 
+            justify-content: center; 
+            align-items: center;
+        }
+        .action-btn { 
+            background: none; 
+            border: none; 
+            font-size: 1rem; 
+            cursor: pointer; 
+            padding: 4px 8px; 
+            border-radius: 30px; 
+            color: #7a4b2a; 
+            transition: 0.2s;
+        }
+        .action-btn:hover { background: #f0e2d4; transform: scale(1.05); }
+        
+        .ir-header { text-align: center; font-family: 'Georgia', serif; font-size: 0.7rem; letter-spacing: 2px; color: #b48c6c; border-bottom: 1px dashed #d4a373; padding-bottom: 6px; margin-bottom: 12px; }
+        .rundown-title { text-align: center; margin-bottom: 12px; }
+        .title-main { font-size: 1.5rem; font-family: 'Georgia', serif; font-weight: 600; color: #7a4b2a; letter-spacing: 1px; }
+        .couple-name { font-size: 1.1rem; font-weight: bold; margin-top: 5px; color: #b45f2e; }
+        .event-meta { text-align: center; font-size: 0.85rem; color: #8b694c; margin: 6px 0 16px 0; border-bottom: 1px solid #eedbcb; padding-bottom: 8px; }
+        
+        .ijab-kabul-container, .serah-terima-container {
+            background: #fffcf7;
+            border-radius: 28px;
+            padding: 30px;
+            border: 1px solid #f0e2d4;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.03);
+        }
+        .speech-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 28px 32px;
+            margin-bottom: 32px;
+            border-left: 8px solid #d4a373;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.05);
+        }
+        .speech-title {
+            font-family: 'Georgia', serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #7a4b2a;
+            margin-bottom: 18px;
+            border-bottom: 2px solid #eedbcb;
+            display: inline-block;
+            padding-bottom: 6px;
+        }
+        .speech-text {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #2c241a;
+            background: #fefaf5;
+            padding: 20px;
+            border-radius: 20px;
+            font-family: 'Segoe UI', 'Times New Roman', serif;
+            white-space: pre-line;
+            margin-top: 12px;
+            border: 1px solid #f0e2d4;
+        }
+        .speech-text strong {
+            color: #9b623c;
+            font-weight: 700;
+        }
+        .action-buttons-group {
+            display: flex;
+            gap: 16px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        .full-panel {
+            flex: 1;
+            background: #fffaf5;
+            padding: 28px 32px;
+        }
+        .note-edit {
+            font-size: 0.65rem;
+            color: #8b694c;
+            text-align: center;
+            margin-top: 8px;
+        }
+        .readonly-info { font-size: 0.65rem; color: #aa7c5c; text-align: center; margin-top: 4px; }
+        @media print { 
+            .input-panel, .tombol-group, button, .tabs-header, .no-print { display: none !important; } 
+            .preview-panel { padding: 0; } 
+            .rundown-table th { background: #7a4b2a !important; color: white !important; }
+            .rundown-table th:nth-child(6), .rundown-table td:nth-child(6) { display: none; } 
+            @page { size: A4; margin: 2cm; } 
+        }
+        .toast-msg { position: fixed; bottom: 30px; right: 30px; background: #2c6e9e; color: white; padding: 12px 24px; border-radius: 40px; z-index: 1000; opacity: 0; transition: 0.3s; pointer-events: none; }
+        .toast-msg.show { opacity: 1; }
+        footer { text-align: center; padding: 12px; font-size: 0.7rem; color: #aa8866; border-top: 1px solid #f0e2d4; }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="tabs-header">
+        <button class="tab-button active" data-tab="data-tab">📋 Data Calon Pengantin</button>
+        <button class="tab-button" data-tab="rundown-tab">📅 Rundown Pernikahan</button>
+        <button class="tab-button" data-tab="serah-terima-tab">🤝 Teks Serah Terima</button>
+        <button class="tab-button" data-tab="ijab-tab">🕌 Teks Ijab Qabul</button>
+    </div>
+
+    <!-- TAB DATA CALON PENGANTIN -->
+    <div id="data-tab" class="tab-content active">
+        <div class="dashboard">
+            <div class="full-panel" style="flex:1; background:#fffaf5; padding:28px 32px;">
+                <div class="section-title">💍 Data Lengkap Pernikahan</div>
+                <div class="sub-section"><h4>👰 Calon Pengantin Wanita (CPW)</h4><div class="form-grid-horizontal">
+                    <div class="input-group"><label>NAMA LENGKAP CPW</label><input type="text" id="cpw_nama" value="Yasmine Amalia, SE."></div>
+                    <div class="input-group"><label>NAMA PANGGILAN</label><input type="text" id="cpw_panggil" value="Yasmin"></div>
+                    <div class="input-group"><label>ANAK KE</label><input type="text" id="cpw_anak_ke" value="1"></div>
+                    <div class="input-group"><label>DARI BERSAUDARA</label><input type="text" id="cpw_dari" value="2"></div>
+                    <div class="input-group"><label>TEMPAT LAHIR</label><input type="text" id="cpw_tempat_lahir" value="Jakarta"></div>
+                    <div class="input-group"><label>TANGGAL LAHIR</label><input type="date" id="cpw_tgl_lahir" value="1998-05-15"></div>
+                    <div class="input-group"><label>KOTA DOMISILI</label><input type="text" id="cpw_domisili" value="Bogor"></div>
+                    <div class="input-group"><label>SUKU</label><input type="text" id="cpw_suku" value="Sunda"></div>
+                    <div class="input-group"><label>NAMA AYAH</label><input type="text" id="cpw_ayah" value="Kamin Laksana"></div>
+                    <div class="input-group"><label>NAMA IBU</label><input type="text" id="cpw_ibu" value="Ibu Siti"></div>
+                    <div class="input-group"><label>WALI NIKAH</label><input type="text" id="cpw_wali" value="Ayah Kandung"></div>
+                    <div class="input-group"><label>NAMA SAKSI</label><input type="text" id="cpw_saksi" value="Bpk. Rahman"></div>
+                    <div class="input-group"><label>PANGGILAN KEPADA AYAH</label><input type="text" id="cpw_panggil_ayah" value="Bapak"></div>
+                    <div class="input-group"><label>PANGGILAN KEPADA IBU</label><input type="text" id="cpw_panggil_ibu" value="Ibu"></div>
+                    <div class="input-group"><label>JURU BICARA</label><input type="text" id="cpw_jubir" value="Bpk Kamin"></div>
+                    <div class="input-group"><label>KEHADIRAN SAAT IJAB KABUL</label>
+                        <select id="cpw_hadir_ijab">
+                            <option value="Ya">Ya</option>
+                            <option value="Tidak">Tidak</option>
+                        </select>
+                    </div>
+                    <div class="input-group"><label>MELAKUKAN IZIN NIKAH</label>
+                        <select id="cpw_izin_nikah">
+                            <option value="Ya">Ya</option>
+                            <option value="Tidak">Tidak</option>
+                        </select>
+                    </div>
+                    <div class="input-group"><label>UNDANGAN CPW</label><input type="text" id="cpw_undangan" value="150"></div>
+                </div></div>
+                <div class="sub-section"><h4>🤵 Calon Pengantin Pria (CPP)</h4><div class="form-grid-horizontal">
+                    <div class="input-group"><label>NAMA LENGKAP CPP</label><input type="text" id="cpp_nama" value="Muhammad Afandi, ST."></div>
+                    <div class="input-group"><label>NAMA PANGGILAN</label><input type="text" id="cpp_panggil" value="Afandi"></div>
+                    <div class="input-group"><label>ANAK KE</label><input type="text" id="cpp_anak_ke" value="2"></div>
+                    <div class="input-group"><label>DARI BERSAUDARA</label><input type="text" id="cpp_dari" value="3"></div>
+                    <div class="input-group"><label>TEMPAT LAHIR</label><input type="text" id="cpp_tempat_lahir" value="Bogor"></div>
+                    <div class="input-group"><label>TANGGAL LAHIR</label><input type="date" id="cpp_tgl_lahir" value="1995-12-10"></div>
+                    <div class="input-group"><label>KOTA DOMISILI</label><input type="text" id="cpp_domisili" value="Bogor"></div>
+                    <div class="input-group"><label>SUKU</label><input type="text" id="cpp_suku" value="Jawa"></div>
+                    <div class="input-group"><label>NAMA AYAH</label><input type="text" id="cpp_ayah" value="Bpk. Uka"></div>
+                    <div class="input-group"><label>NAMA IBU</label><input type="text" id="cpp_ibu" value="Ibu Dewi"></div>
+                    <div class="input-group"><label>NAMA SAKSI</label><input type="text" id="cpp_saksi" value="Bpk. Heri"></div>
+                    <div class="input-group"><label>PANGGILAN KEPADA AYAH</label><input type="text" id="cpp_panggil_ayah" value="Bapak"></div>
+                    <div class="input-group"><label>PANGGILAN KEPADA IBU</label><input type="text" id="cpp_panggil_ibu" value="Ibu"></div>
+                    <div class="input-group"><label>JURU BICARA</label><input type="text" id="cpp_jubir" value="Bpk Uka"></div>
+                    <div class="input-group"><label>UNDANGAN CPP</label><input type="text" id="cpp_undangan" value="150"></div>
+                </div></div>
+                <div class="sub-section"><h4>🕌 Penghulu & Informasi Acara</h4><div class="form-grid-horizontal">
+                    <div class="input-group"><label>NAMA PENGHULU</label><input type="text" id="penghulu" value="Dr. H. Ahmad Syafii"></div>
+                    <div class="input-group"><label>KUA INSTANSI</label><input type="text" id="kua_instansi" value="KUA Bogor Timur"></div>
+                    <div class="input-group"><label>TANGGAL NIKAH</label><input type="date" id="tgl_nikah_date" value="2026-08-08"></div>
+                    <div class="input-group"><label>HARI/TANGGAL (Teks)</label><input type="text" id="tgl_nikah_display" value="Sabtu, 8 Agustus 2026"></div>
+                    <div class="input-group"><label>JAM AKAD</label><input type="time" id="jam_akad_time" value="10:40"></div>
+                    <div class="input-group"><label>TEMPAT AKAD</label><input type="text" id="nama_tempat_akad" value="The Glass House"></div>
+                    <div class="input-group"><label>ALAMAT AKAD</label><input type="text" id="tempat_akad" value="Jl. Raya Tajur No. 88"></div>
+                    <div class="input-group"><label>VENUE</label><input type="text" id="nama_tempat_resepsi" value="The Glass House Resto"></div>
+                    <div class="input-group"><label>ALAMAT RESEPSI</label><input type="text" id="tempat_resepsi" value="Jl. Raya Tajur No. 88"></div>
+                    <div class="input-group"><label>PEMBACA AYAT</label><input type="text" id="pembaca_ayat_suci" value="Ust. Abdul"></div>
+                    <div class="input-group"><label>SARITILAWAH</label><input type="text" id="saritilawah" value="Dika"></div>
+                    <div class="input-group"><label>PEMBACA DOA</label><input type="text" id="pembaca_doa" value="Ust. Ece Hidayat"></div>
+                    <div class="input-group"><label>PEMBAWA BAKI</label><input type="text" id="pembawa_baki" value="Fina"></div>
+                    <div class="input-group"><label>MAHAR UANG</label><input type="text" id="mahar_uang" value="2.259.000"></div>
+                    <div class="input-group"><label>MAHAR EMAS</label><input type="text" id="mahar_emas" value="22.3"></div>
+                    <div class="input-group"><label>MAHAR ALAT SHALAT</label><input type="text" id="mahar_shalat" value="Seperangkat Alat Sholat"></div>
+                    <div class="input-group"><label>MAHAR LAIN</label><input type="text" id="mahar_lain" value=""></div>
+                    <div class="input-group"><label>CATATAN</label><input type="text" id="catatan" value="Dress code batik"></div>
+                    <div class="input-group"><label>JAM MULAI ACARA</label><input type="time" id="jam_mulai_time" value="08:00"></div>
+                    <div class="input-group"><label>JENIS ACARA</label>
+                        <select id="jenis_acara">
+                            <option value="Akad">Akad</option>
+                            <option value="Resepsi">Resepsi</option>
+                            <option value="Akad & Resepsi" selected>Akad & Resepsi</option>
+                        </select>
+                    </div>
+                </div></div>
+                <div class="sub-section"><h4>📸 Data Vendor</h4><div class="form-grid-horizontal">
+                    <div class="input-group"><label>VENUE (Gedung)</label><input type="text" id="vendor_venue" value="The Glass House"></div>
+                    <div class="input-group"><label>CATERING</label><input type="text" id="vendor_catering" value="Sajian Nusantara"></div>
+                    <div class="input-group"><label>DEKORASI</label><input type="text" id="vendor_dekorasi" value="Blooming Garden"></div>
+                    <div class="input-group"><label>DOKUMENTASI</label><input type="text" id="vendor_dokumentasi" value="Momento Visual"></div>
+                    <div class="input-group"><label>MUA & ATTIRE</label><input type="text" id="vendor_mua" value="Makeup by Rani"></div>
+                    <div class="input-group"><label>MC</label><input type="text" id="vendor_mc" value="Ari Purnama"></div>
+                    <div class="input-group"><label>ENTERTAINMENT</label><input type="text" id="vendor_entertainment" value="Ariani Trio"></div>
+                    <div class="input-group"><label>WEDDING ORGANIZER</label><input type="text" id="vendor_wo" value="IR Production"></div>
+                </div></div>
+                <div class="tombol-group">
+                    <button id="btnSaveDataPengantin" class="save-btn">💾 Simpan Data</button>
+                    <button id="btnResetDataPengantin" class="btn-reset">🔄 Reset Kosongkan Form</button>
+                    <button id="btnExportDataExcel" class="excel-btn">📊 Export Excel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB RUNDOWN PERNIKAHAN -->
+    <div id="rundown-tab" class="tab-content">
+        <div class="dashboard">
+            <div class="input-panel">
+                <div class="section-title">🎀 Atur Acara & PIC</div>
+                <div class="input-group"><label>👰 Nama Pengantin Wanita</label><input type="text" id="namaCPW" value="Yasmine Amalia, SE." readonly></div>
+                <div class="input-group"><label>🤵 Nama Pengantin Pria</label><input type="text" id="namaCPP" value="Muhammad Afandi, ST." readonly></div>
+                <div class="input-group"><label>📅 Hari & Tanggal</label><input type="text" id="tglAcara" value="Sabtu, 8 Agustus 2026" readonly></div>
+                <div class="input-group"><label>📍 Venue</label><input type="text" id="venueAcara" value="The Glass House Resto" readonly></div>
+                <div class="input-group"><label>⏰ Jam Mulai Acara (hh:mm)</label><input type="time" id="startTime" value="07:30"></div>
+                <div class="tombol-group">
+                    <button id="btnSaveRundown" class="save-btn">💾 Simpan</button>
+                    <button id="btnResetRundown" class="btn-reset">🔄 Reset</button>
+                    <button id="btnSaveAsPdf" class="pdf-btn">📑 Save as PDF</button>
+                    <button id="btnExportRundownExcel" class="excel-btn">📊 Excel</button>
+                </div>
+                <button id="btnAddNewRow" class="btn-add-row">➕ Tambah Baris Acara</button>
+                <div class="readonly-info">📌 Waktu akan dihitung otomatis berdasarkan Durasi dan Jam Mulai</div>
+                <div class="note-edit">* Klik pada kolom Acara atau PIC untuk mengedit langsung | Ubah durasi untuk perhitungan waktu otomatis</div>
+            </div>
+            <div class="preview-panel" id="previewContainer">
+                <div id="rundownRender"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB TEKS SERAH TERIMA -->
+    <div id="serah-terima-tab" class="tab-content">
+        <div class="dashboard">
+            <div class="full-panel" style="flex:1; background:#fffaf5; padding:28px 32px;">
+                <div class="section-title">🤝 Teks Serah Terima Pengantin</div>
+                <div class="serah-terima-container">
+                    <div class="speech-card">
+                        <div class="speech-title">📢 Sambutan Penyerahan (dari Keluarga CPP)</div>
+                        <div class="speech-text" id="sambutanPenyerahanText">Memuat teks penyerahan...</div>
+                    </div>
+                    <div class="speech-card">
+                        <div class="speech-title">🤲 Sambutan Penerimaan (dari Keluarga CPW)</div>
+                        <div class="speech-text" id="sambutanPenerimaanText">Memuat teks penerimaan...</div>
+                    </div>
+                    <div class="action-buttons-group no-print">
+                        <button id="btnCopySerahTerima" class="secondary">📋 Salin Kedua Teks</button>
+                    </div>
+                    <div class="note-edit">✨ Teks serah terima otomatis tergenerate. Semua nama ditampilkan dengan format <strong>tebal</strong>.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB TEKS IJAB QABUL -->
+    <div id="ijab-tab" class="tab-content">
+        <div class="dashboard">
+            <div class="full-panel" style="flex:1; background:#fffaf5; padding:28px 32px;">
+                <div class="section-title">🕋 Teks Ijab & Qabul</div>
+                <div class="ijab-kabul-container">
+                    <div class="speech-card">
+                        <div class="speech-title">📜 Ijab (Wali Nikah)</div>
+                        <div class="speech-text" id="ijabTextDisplay"></div>
+                    </div>
+                    <div class="speech-card">
+                        <div class="speech-title">🤝 Qabul (Calon Pengantin Pria)</div>
+                        <div class="speech-text" id="qobulTextDisplay"></div>
+                    </div>
+                    <div class="action-buttons-group no-print">
+                        <button id="btnCopyIjab" class="secondary">📋 Salin Teks</button>
+                    </div>
+                    <div class="note-edit">✨ Teks Ijab menggunakan format: Saudara [nama CPP] bin [ayah CPP], Saya nikahkan... dan Qabul tetap.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>✨ IR Production — Wedding Organizer | Perhitungan waktu otomatis berdasarkan durasi</footer>
+</div>
+<div id="toastMsg" class="toast-msg">✅ Tersimpan!</div>
+
+<script>
+    // ========== DATA DEFAULT RUNDOWN ==========
+    const DEFAULT_RUNDOWN_ROWS = [
+        { no_raw: 1, durasi: 60, acara: "Clear area venue", pic: "WO" },
+        { no_raw: 2, durasi: 15, acara: "Briefing keluarga CPW & CPP untuk sesi Serah Terima", pic: "WO, Keluarga CPP CPW" },
+        { no_raw: 3, durasi: 20, acara: "Pembukaan Acara oleh MC, Rombongan Keluarga CPP Masuk (Backsong: Sholawat)", pic: "MC, Keluarga Muhammad Afandi & Yasmine Amalia, WO" },
+        { no_raw: 4, durasi: 5, acara: "Sambutan penyerahan pihak CPP oleh juru bicara CPP", pic: "Juru bicara CPP" },
+        { no_raw: 5, durasi: 5, acara: "Sambutan penerimaan pihak CPP oleh juru bicara CPW", pic: "Juru bicara CPW" },
+        { no_raw: 6, durasi: 5, acara: "Penyerahan hantaran simbolis oleh Ibu CPP ke Ibu CPW", pic: "Ibunda Muhammad Afandi & Ibunda Yasmine Amalia" },
+        { no_raw: 7, durasi: 5, acara: "CPP dipersilakan untuk pamit/salim kepada orangtua lalu melangkah menuju orang tua CPW", pic: "Muhammad Afandi & orang tua" },
+        { no_raw: 8, durasi: 20, acara: "Pengalungan bunga melati oleh Ibu CPW kepada CPP, lalu salim kepada orang tua CPW", pic: "Muhammad Afandi & orang tua Yasmine Amalia, Pembawa baki: Fina" },
+        { no_raw: 9, durasi: 20, acara: "Orang tua CPW mendampingi CPP untuk menuju meja akad nikah", pic: "Orang tua Yasmine Amalia & Muhammad Afandi" },
+        { no_raw: 10, durasi: 20, acara: "Pembacaan ayat suci Al-Qur'an & Saritilawah", pic: "Dika" },
+        { no_raw: 11, durasi: 10, acara: "Izin Nikah CPW kepada orang tua", pic: "WO, orang tua CPW" },
+        { no_raw: 12, durasi: 5, acara: "Persiapan Berkas Nikah & Prosesi Ijab Qabul", pic: "Penghulu" },
+        { no_raw: 13, durasi: 15, acara: "MC mempersilakan pengantin wanita masuk ke area akad nikah", pic: "Yasmine Amalia & Pengapit: Rahma & Osa" },
+        { no_raw: 14, durasi: 5, acara: "Penyerahan mas kawin/mahar, doa & nasihat pernikahan", pic: "Penghulu & Pengantin" },
+        { no_raw: 15, durasi: 10, acara: "Sesi foto pengantin & orang tua", pic: "Photographer, MC" },
+        { no_raw: 16, durasi: 15, acara: "Sungkeman & Rangkaian acara Adat", pic: "MC, WO, Pengantin" },
+        { no_raw: 17, durasi: 60, acara: "Beauty shoot pengantin & persiapan resepsi", pic: "Photographer, MUA" },
+        { no_raw: 18, durasi: 55, acara: "Opening Resepsi & Sambutan", pic: "MC, Pengantin, Keluarga" },
+        { no_raw: 19, durasi: 5, acara: "Tamu undangan memberikan ucapan selamat", pic: "MC, WO, Photographer" },
+        { no_raw: 20, durasi: 60, acara: "Hiburan, Games, Throwing bouquet & MC Closing", pic: "MC, WO, Pengantin" }
+    ];
+    
+    let currentRows = [];
+    
+    function escapeHtml(str) { if(!str) return ""; return str.replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
+    function showToast(msg) { let t=document.getElementById('toastMsg'); t.innerText=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+    function renumberRows() { for(let i=0;i<currentRows.length;i++) currentRows[i].no_raw = i+1; }
+    function formatDateToIndonesian(dateStr) { if(!dateStr) return ""; let date = new Date(dateStr); if(isNaN(date)) return dateStr; let days = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"]; let months = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"]; let dayName = days[date.getDay()]; let day = date.getDate(); let month = months[date.getMonth()]; let year = date.getFullYear(); return `${dayName}, ${day} ${month} ${year}`; }
+
+    // Konversi waktu string "HH:MM" ke menit
+    function timeToMinutes(timeStr) {
+        if(!timeStr) return NaN;
+        let parts = timeStr.split(':');
+        if(parts.length === 2) return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        return NaN;
+    }
+    
+    // Konversi menit ke format "HH:MM"
+    function minutesToTime(minutes) {
+        let h = Math.floor(minutes / 60);
+        let m = minutes % 60;
+        return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+    }
+    
+    // Hitung ulang semua waktu berdasarkan durasi dan jam mulai
+    function calculateAllTimes(startTimeStr) {
+        let startMinutes = timeToMinutes(startTimeStr);
+        if(isNaN(startMinutes)) return currentRows.map(r => "-");
+        
+        let times = [];
+        let currentTime = startMinutes;
+        
+        for(let i = 0; i < currentRows.length; i++) {
+            let durasi = currentRows[i].durasi || 0;
+            let startTime = minutesToTime(currentTime);
+            let endTime = minutesToTime(currentTime + durasi);
+            times.push(`${startTime} - ${endTime}`);
+            currentTime += durasi;
+        }
+        return times;
+    }
+    
+    function boldNames(text, namesMap) {
+        let result = text;
+        let sortedNames = Object.keys(namesMap).sort((a,b) => b.length - a.length);
+        for(let name of sortedNames) {
+            if(name && name.trim()) {
+                let escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                let regex = new RegExp(`(${escapedName})`, 'g');
+                result = result.replace(regex, '<strong>$1</strong>');
+            }
+        }
+        return result;
+    }
+
+    function generateSerahTerima() {
+        let cpwNama = document.getElementById('cpw_nama').value.trim() || "Yasmine Amalia, SE.";
+        let cppNama = document.getElementById('cpp_nama').value.trim() || "Muhammad Afandi, ST.";
+        let cpwAyah = document.getElementById('cpw_ayah').value.trim() || "Kamin Laksana";
+        let cpwIbu = document.getElementById('cpw_ibu').value.trim() || "Ibu Siti";
+        let cppAyah = document.getElementById('cpp_ayah').value.trim() || "Bpk. Uka";
+        let cppIbu = document.getElementById('cpp_ibu').value.trim() || "Ibu Dewi";
+        let cppJubir = document.getElementById('cpp_jubir').value.trim() || "Bpk Uka";
+        let cpwJubir = document.getElementById('cpw_jubir').value.trim() || "Bpk Kamin";
+        
+        let teksPenyerahan = `SAMBUTAN PENYERAHAN CPP\n\nDisampaikan Oleh: ${cppJubir}\nBismillahirrahmanirrahim.. \nAssalamu'alaikum Warohmatullahi Wabarokaatuh.. \nYang terhormat keluarga besar calon pengantin wanita, keluarga Bapak ${cpwAyah} & Ibu ${cpwIbu}.\nSaya selaku perwakilan dari keluarga Bapak ${cppAyah} & Ibu ${cppIbu} yang merupakan orang tua dari calon pengantin pria ananda ${cppNama} pada hari ini dengan penuh rasa bahagia dan ikhlas mengantar, membawa dan akan menyerahkan calon pengantin pria untuk melaksanakan pernikahan dengan putri Bapak ${cppAyah} & Ibu ${cppIbu} yang bernama ${cpwNama}. \nKami mohon penyerahan kami ini dapat diterima dengan hati bahagia oleh keluarga calon pengantin wanita. Selain itu, ada beberapa hantaran yang kami bawa, mohon dapat pula diterima. \nSemoga kita semua mendapat lindungan dari Allah SWT. Aamiin. \nWassalamu'alaikum. Warohmatullaahi Wabarokaatuh.`;
+        
+        let teksPenerimaan = `SAMBUTAN PENERIMAAN CPW\n\nOleh: ${cpwJubir}\nBismillahirrahmanirrahim.. \nAssalamu'alaikum Warohmatullahi Wabarokaatuh.. \nDengan penuh rasa syukur kepada Allah swt, saya mewakili keluarga Bapak ${cpwAyah} & Ibu ${cpwIbu} menerima kehadiran keluarga calon pengantin pria yakni keluarga Bapak ${cppAyah} & Ibu ${cppIbu} dan menyatakan dengan ikhlas kami dapat menerima ananda ${cppNama}, untuk dinikahkan pada hari ini dengan putri Bapak ${cpwAyah} & Ibu ${cpwIbu} yang bernama ${cpwNama}.  \nSemoga semua rencana kita akan mendapat petunjuk dan bimbingan dari Allah SWT. Aamiin. \nDan juga, berbagai hantaran yang telah disampaikan tadi, kami menerimanya dengan senang hati, dengan ucapan alhamdulillahirabbil'alamin jazakallah khairan katsiran. Sekian dan terima kasih. \nWassalamu'alaikum Warohmatullaahi Wabarokaatuh.`;
+        
+        let namesMap = { [cpwNama]: true, [cppNama]: true, [cpwAyah]: true, [cpwIbu]: true, [cppAyah]: true, [cppIbu]: true, [cppJubir]: true, [cpwJubir]: true };
+        document.getElementById('sambutanPenyerahanText').innerHTML = boldNames(teksPenyerahan, namesMap);
+        document.getElementById('sambutanPenerimaanText').innerHTML = boldNames(teksPenerimaan, namesMap);
+    }
+    
+    function generateIjabQabul() {
+        let cpwNama = document.getElementById('cpw_nama').value.trim() || "Yasmine Amalia, SE.";
+        let cpwAyah = document.getElementById('cpw_ayah').value.trim() || "Kamin Laksana";
+        let cppNama = document.getElementById('cpp_nama').value.trim() || "Muhammad Afandi, ST.";
+        let cppAyah = document.getElementById('cpp_ayah').value.trim() || "Bpk. Uka";
+        let maharUang = document.getElementById('mahar_uang').value.trim() || "2.259.000";
+        let maharEmas = document.getElementById('mahar_emas').value.trim() || "22.3";
+        let maharShalat = document.getElementById('mahar_shalat').value.trim() || "Seperangkat Alat Sholat";
+        let maharString = `${maharShalat}, Perhiasan Emas seberat ${maharEmas} gram & Uang sebesar Rp ${maharUang}`;
+        let ijabText = `Saudara ${cppNama} bin ${cppAyah}, Saya nikahkan dan kawinkan [anak kandung] saya yang bernama ${cpwNama} binti ${cpwAyah} kepada Engkau dengan mas kawin berupa ${maharString} dibayar tunai.`;
+        let qobulText = `Saya terima nikah dan kawinnya Yasmine Amalia, SE. binti Kamin Laksana dengan mas kawin tersebut dibayar tunai.`;
+        document.getElementById('ijabTextDisplay').innerHTML = boldNames(ijabText, { [cppNama]: true, [cppAyah]: true, [cpwNama]: true, [cpwAyah]: true });
+        document.getElementById('qobulTextDisplay').innerHTML = qobulText.replace(/(Yasmine Amalia, SE\.)/g, '<strong>$1</strong>').replace(/(Kamin Laksana)/g, '<strong>$1</strong>');
+    }
+    
+    function syncDataToAll() {
+        let cpw = document.getElementById('cpw_nama')?.value || "Yasmine Amalia, SE.";
+        let cpp = document.getElementById('cpp_nama')?.value || "Muhammad Afandi, ST.";
+        let tglDate = document.getElementById('tgl_nikah_date')?.value;
+        let tglDisplay = "";
+        if(tglDate) { tglDisplay = formatDateToIndonesian(tglDate); document.getElementById('tgl_nikah_display').value = tglDisplay; } else { tglDisplay = document.getElementById('tgl_nikah_display')?.value || "Sabtu, 8 Agustus 2026"; }
+        let venue = document.getElementById('nama_tempat_resepsi')?.value || "The Glass House Resto";
+        if(document.getElementById('namaCPW')) document.getElementById('namaCPW').value = cpw;
+        if(document.getElementById('namaCPP')) document.getElementById('namaCPP').value = cpp;
+        if(document.getElementById('tglAcara')) document.getElementById('tglAcara').value = tglDisplay;
+        if(document.getElementById('venueAcara')) document.getElementById('venueAcara').value = venue;
+        renderRundownTable();
+        generateSerahTerima();
+        generateIjabQabul();
+    }
+    
+    function renderRundownTable() {
+        let cpw = document.getElementById('namaCPW').value;
+        let cpp = document.getElementById('namaCPP').value;
+        let tgl = document.getElementById('tglAcara').value;
+        let venue = document.getElementById('venueAcara').value;
+        let startTime = document.getElementById('startTime').value;
+        let waktuList = calculateAllTimes(startTime);
+        
+        let html = `<div class="ir-header">IR PRODUCTION — WEDDING ORGANIZER</div>
+                    <div class="rundown-title">
+                        <div class="title-main">💍 RUNDOWN PERNIKAHAN</div>
+                        <div class="couple-name">${escapeHtml(cpw)} & ${escapeHtml(cpp)}</div>
+                        <div class="event-meta">📅 ${escapeHtml(tgl)} &nbsp;|&nbsp; 📍 ${escapeHtml(venue)}</div>
+                    </div>
+                    <table class="rundown-table" id="mainRundownTable">
+                        <thead>
+                            <tr><th>No</th><th>Waktu</th><th>Acara</th><th>PIC</th><th>Durasi</th><th>Aksi</th></tr></thead>
+                        <tbody>`;
+        for(let i=0; i<currentRows.length; i++) {
+            let row = currentRows[i];
+            let acaraTxt = row.acara.replace(/Yasmine Amalia/g, cpw).replace(/Muhammad Afandi/g, cpp);
+            let picTxt = row.pic.replace(/Yasmine Amalia/g, cpw).replace(/Muhammad Afandi/g, cpp);
+            html += `<tr data-row-idx="${i}">
+                        <td style="text-align:center;">${row.no_raw}</td>
+                        <td style="text-align:center;">${escapeHtml(waktuList[i])}</td>
+                        <td class="editable-cell" data-idx="${i}" data-field="acara"><div class="cell-display">${escapeHtml(acaraTxt)}</div></td>
+                        <td class="editable-cell" data-idx="${i}" data-field="pic"><div class="cell-display">${escapeHtml(picTxt)}</div></td>
+                        <td style="text-align:center;"><input type="number" class="durasi-input" data-idx="${i}" value="${row.durasi}" step="1" min="0"></td>
+                        <td class="action-buttons"><button class="action-btn delete-btn" data-idx="${i}">🗑️</button></td>
+                       </tr>`;
+        }
+        html += `</tbody></table>`;
+        document.getElementById('rundownRender').innerHTML = html;
+        attachRundownEvents();
+    }
+    
+    function attachRundownEvents() {
+        // Event untuk tombol delete
+        document.querySelectorAll('.delete-btn').forEach(btn=>{
+            btn.addEventListener('click', (e)=>{
+                let idx = parseInt(btn.getAttribute('data-idx'));
+                if(confirm("Hapus baris ini?")){ currentRows.splice(idx,1); renumberRows(); renderRundownTable(); saveRundown(); }
+            });
+        });
+        
+        // Event untuk input durasi - perhitungan otomatis
+        document.querySelectorAll('.durasi-input').forEach(inp=>{
+            inp.addEventListener('change', (e)=>{
+                let idx = parseInt(inp.getAttribute('data-idx'));
+                let newDurasi = parseInt(inp.value) || 0;
+                if(newDurasi >= 0) {
+                    currentRows[idx].durasi = newDurasi;
+                    renderRundownTable();
+                    saveRundown();
+                    showToast("Durasi diubah, waktu otomatis terhitung ulang");
+                }
+            });
+        });
+        
+        // Event untuk edit cell (Acara & PIC)
+        document.querySelectorAll('.editable-cell').forEach(cell=>{
+            if(cell.getAttribute('data-listener')) return;
+            cell.setAttribute('data-listener','true');
+            cell.addEventListener('click', (e)=>{
+                if(cell.classList.contains('editing')) return;
+                let idx = parseInt(cell.getAttribute('data-idx'));
+                let field = cell.getAttribute('data-field');
+                let oldText = currentRows[idx][field];
+                cell.classList.add('editing');
+                let displayDiv = cell.querySelector('.cell-display');
+                if(displayDiv) displayDiv.style.display = 'none';
+                
+                if(field === 'acara') {
+                    let textarea = document.createElement('textarea');
+                    textarea.value = oldText;
+                    textarea.rows = 3;
+                    textarea.classList.add('acara-textarea');
+                    cell.appendChild(textarea);
+                    textarea.focus();
+                    textarea.addEventListener('blur', ()=>{
+                        let newVal = textarea.value.trim();
+                        if(newVal !== "") currentRows[idx][field] = newVal;
+                        renderRundownTable(); saveRundown();
+                    });
+                    textarea.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') renderRundownTable(); });
+                } else if(field === 'pic') {
+                    let input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = oldText;
+                    input.classList.add('pic-input');
+                    cell.appendChild(input);
+                    input.focus();
+                    input.addEventListener('blur', ()=>{
+                        let newVal = input.value.trim();
+                        if(newVal !== "") currentRows[idx][field] = newVal;
+                        renderRundownTable(); saveRundown();
+                    });
+                    input.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') input.blur(); if(e.key === 'Escape') renderRundownTable(); });
+                }
+            });
+        });
+    }
+    
+    function saveRundown() { localStorage.setItem('weddingRundownRows_Full', JSON.stringify(currentRows)); }
+    function loadSavedRundown() { 
+        let saved = localStorage.getItem('weddingRundownRows_Full'); 
+        if(saved) { 
+            currentRows = JSON.parse(saved); 
+            renumberRows(); 
+        } else { 
+            currentRows = JSON.parse(JSON.stringify(DEFAULT_RUNDOWN_ROWS)); 
+            renumberRows();
+        } 
+    }
+    function resetRundownDefault() { 
+        currentRows = JSON.parse(JSON.stringify(DEFAULT_RUNDOWN_ROWS)); 
+        renumberRows();
+        renderRundownTable(); 
+        saveRundown(); 
+        showToast("Reset ke default"); 
+    }
+    function addNewRow() { 
+        let newNo = currentRows.length + 1; 
+        currentRows.push({ no_raw: newNo, durasi: 15, acara: "Acara Baru", pic: "PIC" }); 
+        renderRundownTable(); 
+        saveRundown(); 
+        showToast("Baris baru ditambahkan"); 
+    }
+    function exportRundownExcel() { 
+        let startTime = document.getElementById('startTime').value;
+        let waktuList = calculateAllTimes(startTime);
+        let wsData = [["No","Waktu","Acara","PIC","Durasi"]]; 
+        for(let i=0;i<currentRows.length;i++) {
+            wsData.push([currentRows[i].no_raw, waktuList[i], currentRows[i].acara, currentRows[i].pic, currentRows[i].durasi]);
+        }
+        let wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsData), "Rundown"); 
+        XLSX.writeFile(wb, "rundown.xlsx"); 
+    }
+    function saveAsPdf() { window.print(); }
+    
+    function resetPengantinFormOnly() {
+        const textInputIds = ['cpw_nama','cpw_panggil','cpw_anak_ke','cpw_dari','cpw_tempat_lahir','cpw_domisili','cpw_suku','cpw_ayah','cpw_ibu','cpw_wali','cpw_saksi','cpw_panggil_ayah','cpw_panggil_ibu','cpw_jubir','cpw_undangan','cpp_nama','cpp_panggil','cpp_anak_ke','cpp_dari','cpp_tempat_lahir','cpp_domisili','cpp_suku','cpp_ayah','cpp_ibu','cpp_saksi','cpp_panggil_ayah','cpp_panggil_ibu','cpp_jubir','cpp_undangan','penghulu','kua_instansi','tgl_nikah_display','nama_tempat_akad','tempat_akad','nama_tempat_resepsi','tempat_resepsi','pembaca_ayat_suci','saritilawah','pembaca_doa','pembawa_baki','mahar_uang','mahar_emas','mahar_shalat','mahar_lain','catatan','vendor_venue','vendor_catering','vendor_dekorasi','vendor_dokumentasi','vendor_mua','vendor_mc','vendor_entertainment','vendor_wo'];
+        textInputIds.forEach(id => { let el = document.getElementById(id); if (el && el.type !== 'date' && el.type !== 'time' && el.tagName !== 'SELECT') { el.value = ''; } });
+        showToast("Form data pengantin telah dikosongkan");
+        syncDataToAll();
+    }
+    
+    function savePengantinData() { 
+        const ids=['cpw_nama','cpw_ayah','cpw_ibu','cpp_nama','cpp_ayah','cpp_ibu','cpp_jubir','cpw_jubir','mahar_uang','mahar_emas','mahar_shalat','mahar_lain','jenis_acara']; 
+        let data={}; ids.forEach(id=>{ let el=document.getElementById(id); if(el) data[id]=el.value;}); 
+        localStorage.setItem('weddingDataCalon_CSV', JSON.stringify(data)); showToast("Data tersimpan"); syncDataToAll(); 
+    }
+    function loadPengantinData() { let saved=localStorage.getItem('weddingDataCalon_CSV'); if(saved){ let data=JSON.parse(saved); for(let k in data){ let el=document.getElementById(k); if(el) el.value=data[k]; } } syncDataToAll(); }
+    function exportDataExcel() { let ws=[["Field","Value"]]; document.querySelectorAll('#data-tab .input-group input, #data-tab .input-group select').forEach(inp=>{ let lbl=inp.closest('.input-group')?.querySelector('label')?.innerText||inp.id; ws.push([lbl,inp.value]);}); let wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(ws),"Data"); XLSX.writeFile(wb,"Data_Pengantin.xlsx"); }
+    function copySerahTerima() { let t1=document.getElementById('sambutanPenyerahanText').innerText; let t2=document.getElementById('sambutanPenerimaanText').innerText; navigator.clipboard.writeText(`=== SERAH TERIMA ===\n\n${t1}\n\n---\n\n${t2}`); showToast("Teks Serah Terima disalin!"); }
+    function copyIjabText() { let ijab=document.getElementById('ijabTextDisplay').innerText; let qobul=document.getElementById('qobulTextDisplay').innerText; navigator.clipboard.writeText(`IJAB:\n${ijab}\n\nQABUL:\n${qobul}`); showToast("Ijab qabul disalin"); }
+    
+    window.onload = () => {
+        loadPengantinData();
+        loadSavedRundown();
+        renderRundownTable();
+        document.querySelectorAll('.tab-button').forEach(btn=>{ btn.addEventListener('click',()=>{ document.querySelectorAll('.tab-button').forEach(b=>b.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active')); btn.classList.add('active'); document.getElementById(btn.getAttribute('data-tab')).classList.add('active'); if(btn.getAttribute('data-tab')==='rundown-tab') renderRundownTable(); if(btn.getAttribute('data-tab')==='serah-terima-tab') generateSerahTerima(); if(btn.getAttribute('data-tab')==='ijab-tab') generateIjabQabul(); }); });
+        document.getElementById('btnSaveDataPengantin')?.addEventListener('click', savePengantinData);
+        document.getElementById('btnResetDataPengantin')?.addEventListener('click', resetPengantinFormOnly);
+        document.getElementById('btnExportDataExcel')?.addEventListener('click', exportDataExcel);
+        document.getElementById('btnSaveRundown')?.addEventListener('click', saveRundown);
+        document.getElementById('btnResetRundown')?.addEventListener('click', resetRundownDefault);
+        document.getElementById('btnSaveAsPdf')?.addEventListener('click', saveAsPdf);
+        document.getElementById('btnExportRundownExcel')?.addEventListener('click', exportRundownExcel);
+        document.getElementById('btnAddNewRow')?.addEventListener('click', addNewRow);
+        document.getElementById('btnCopySerahTerima')?.addEventListener('click', copySerahTerima);
+        document.getElementById('btnCopyIjab')?.addEventListener('click', copyIjabText);
+        document.getElementById('startTime')?.addEventListener('change', () => renderRundownTable());
+        let inputs = ['cpw_nama','cpp_nama','cpw_ayah','cpw_ibu','cpp_ayah','cpp_ibu','cpp_jubir','cpw_jubir','mahar_uang','mahar_emas','mahar_shalat','mahar_lain','tgl_nikah_date','nama_tempat_resepsi','jenis_acara'];
+        inputs.forEach(id=>{ document.getElementById(id)?.addEventListener('change', syncDataToAll); });
+        syncDataToAll();
+    };
+</script>
+</body>
+</html>
